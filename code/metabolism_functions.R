@@ -295,11 +295,18 @@ return(data.frame(tank = tankID,
 convert_metab = function(metabModel = NULL,...){
   tankID = gsub(".*_(\\w{1}\\d{1,2}_\\d{1}).rds","\\1",sapply(strsplit(metabModel, "/"),"[",length(unlist(strsplit(metabModel,"/")))))
   x = readRDS(metabModel)
+  n_obs = environment(x[["model"]][["model"]][["data"]])[["data"]][["N"]]
   gpp.coef = x$model$BUGSoutput$sims.list$C[,1]
+  r.coef = x$model$BUGSoutput$sims.list$C[,2]
   par = environment(x[["model"]][["model"]][["data"]])[["data"]][["U"]][,1]
-  gpp.out = sapply(gpp.coef, function(a) sum(a*par))
+  lntemp = environment(x[["model"]][["model"]][["data"]])[["data"]][["U"]][,2]
+  gpp.out = sapply(gpp.coef, function(a) mean(a*par)*n_obs)
+  r.out = sapply(r.coef, function(a) mean(a * lntemp)*n_obs)
+  nep.out = gpp.out + r.out
   return(list(summary = data.frame(tank = tankID,
                                    x$metab,
                                    x$metab.sd),
-              gpp.out = gpp.out))
+              gpp.out = gpp.out,
+              r.out = r.out,
+              nep.out = nep.out))
 }
